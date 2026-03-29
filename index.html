@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>스위치온 다이어트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #1D9E75;
+    --green-light: #E1F5EE;
+    --green-mid: #5DCAA5;
+    --green-dark: #0F6E56;
+    --bg: #F7F8F6;
+    --card: #FFFFFF;
+    --text: #1a1a1a;
+    --text-sec: #6b7280;
+    --text-ter: #9ca3af;
+    --border: rgba(0,0,0,0.08);
+    --border-med: rgba(0,0,0,0.14);
+    --red-bg: #FEF2F2;
+    --red-text: #991B1B;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    padding-bottom: 90px;
+  }
+
+  /* 상단 헤더 */
+  .top-bar {
+    background: var(--card);
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .top-bar-inner { display: flex; align-items: center; justify-content: space-between; }
+  .app-name { font-family: 'Nanum Gothic', sans-serif; font-weight: 800; font-size: 18px; letter-spacing: -0.3px; }
+  .app-name span { color: var(--green); }
+  .today-badge {
+    font-size: 12px; color: var(--text-sec);
+    background: var(--bg); padding: 4px 10px;
+    border-radius: 20px; border: 1px solid var(--border);
+  }
+
+  /* 탭 네비게이션 */
+  .tab-nav {
+    display: flex;
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 61px;
+    z-index: 99;
+  }
+  .tab-btn {
+    flex: 1; padding: 12px 4px; font-size: 13px;
+    color: var(--text-ter); border: none; background: none;
+    cursor: pointer; border-bottom: 2px solid transparent;
+    transition: all 0.2s; font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 400;
+  }
+  .tab-btn.active { color: var(--green); border-bottom-color: var(--green); font-weight: 700; }
+
+  /* 섹션 패딩 */
+  .section { padding: 20px 16px; display: none; }
+  .section.active { display: block; }
+
+  /* ── 홈 탭 ── */
+  .home-date {
+    font-size: 13px; color: var(--text-sec);
+    margin-bottom: 16px; text-align: center;
+  }
+
+  /* 주간 캘린더 */
+  .cal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .cal-nav { background: none; border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 12px; font-size: 13px; color: var(--text-sec); cursor: pointer; }
+  .cal-nav:active { background: var(--bg); }
+  .cal-week-label { font-size: 14px; font-weight: 700; color: var(--text); }
+  .day-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin-bottom: 20px; }
+  .day-cell {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 4px; padding: 8px 2px; border-radius: var(--radius-sm);
+    border: 1.5px solid transparent; cursor: pointer; transition: all 0.15s;
+    background: var(--card);
+  }
+  .day-cell:active { transform: scale(0.95); }
+  .day-cell.selected { border-color: var(--green); background: var(--green-light); }
+  .day-cell.today .d-num { color: var(--green); font-weight: 700; }
+  .d-label { font-size: 10px; color: var(--text-ter); }
+  .d-num { font-size: 15px; color: var(--text); font-weight: 400; }
+  .d-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); }
+  .d-dot.empty { background: transparent; }
+
+  /* 체크 카드 */
+  .check-card {
+    background: var(--card); border-radius: var(--radius);
+    border: 1.5px solid var(--border); padding: 20px;
+    margin-bottom: 16px; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .check-card:active { transform: scale(0.98); }
+  .check-card.done { border-color: var(--green); background: var(--green-light); }
+  .check-inner { display: flex; align-items: center; gap: 16px; }
+  .big-circle {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 2.5px solid var(--border-med);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.25s;
+    background: var(--bg);
+  }
+  .check-card.done .big-circle { background: var(--green); border-color: var(--green); }
+  .big-circle svg { opacity: 0; transition: opacity 0.2s; }
+  .check-card.done .big-circle svg { opacity: 1; }
+  .check-texts .main { font-size: 16px; font-weight: 700; color: var(--text); }
+  .check-texts .sub { font-size: 13px; color: var(--text-sec); margin-top: 3px; }
+  .check-card.done .check-texts .main { color: var(--green-dark); }
+
+  /* 통계 */
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .stat-card { background: var(--card); border-radius: var(--radius-sm); padding: 14px 16px; border: 1px solid var(--border); }
+  .stat-label { font-size: 11px; color: var(--text-ter); margin-bottom: 4px; }
+  .stat-val { font-size: 28px; font-weight: 800; font-family: 'Nanum Gothic', sans-serif; color: var(--text); }
+  .stat-unit { font-size: 12px; color: var(--text-sec); }
+
+  /* 이번주 달성률 */
+  .progress-card { background: var(--card); border-radius: var(--radius-sm); padding: 14px 16px; border: 1px solid var(--border); margin-bottom: 20px; }
+  .progress-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .progress-label { font-size: 13px; color: var(--text-sec); }
+  .progress-pct { font-size: 13px; font-weight: 700; color: var(--green); }
+  .progress-track { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--green); border-radius: 3px; transition: width 0.4s ease; }
+
+  /* ── 가이드 탭 ── */
+  .guide-week-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .guide-week-label { font-size: 16px; font-weight: 700; }
+  .guide-nav-btn {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 8px 16px; font-size: 14px; cursor: pointer; color: var(--text-sec);
+    transition: all 0.15s; font-family: 'Noto Sans KR', sans-serif;
+  }
+  .guide-nav-btn:active { background: var(--bg); transform: scale(0.96); }
+  .guide-nav-btn:disabled { opacity: 0.3; cursor: default; }
+
+  .guide-week-dots { display: flex; gap: 6px; justify-content: center; margin-bottom: 20px; }
+  .guide-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border-med); transition: all 0.2s; }
+  .guide-dot.active { background: var(--green); width: 20px; border-radius: 4px; }
+
+  .guide-card {
+    background: var(--card); border-radius: var(--radius);
+    border: 1px solid var(--border); margin-bottom: 12px; overflow: hidden;
+  }
+  .guide-card-header {
+    padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; user-select: none;
+  }
+  .guide-card-header:active { background: var(--bg); }
+  .guide-card-title { font-size: 14px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .guide-icon { font-size: 16px; }
+  .guide-arrow { font-size: 12px; color: var(--text-ter); transition: transform 0.2s; }
+  .guide-card.open .guide-arrow { transform: rotate(180deg); }
+  .guide-card-body { display: none; padding: 0 16px 14px; }
+  .guide-card.open .guide-card-body { display: block; }
+  .guide-item {
+    font-size: 13px; color: var(--text); line-height: 1.6;
+    padding: 6px 0; border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .guide-item:last-child { border-bottom: none; }
+  .guide-item::before { content: '·'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .guide-item.red-item { color: var(--red-text); }
+  .guide-item.red-item::before { color: #EF4444; }
+
+  .guide-badge {
+    display: inline-block; font-size: 11px; padding: 2px 8px;
+    border-radius: 20px; font-weight: 700; margin-left: 6px;
+  }
+  .badge-common { background: #EEF2FF; color: #3730A3; }
+  .badge-week { background: var(--green-light); color: var(--green-dark); }
+  .badge-stop { background: var(--red-bg); color: var(--red-text); }
+
+  /* 주차 요약 배너 */
+  .week-banner {
+    background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+    border-radius: var(--radius); padding: 18px 20px; margin-bottom: 16px; color: white;
+  }
+  .week-banner-num { font-size: 12px; opacity: 0.8; margin-bottom: 4px; font-weight: 400; }
+  .week-banner-title { font-size: 18px; font-weight: 800; font-family: 'Nanum Gothic', sans-serif; }
+  .week-banner-desc { font-size: 13px; opacity: 0.85; margin-top: 6px; line-height: 1.5; }
+
+  /* 하단 네비 */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    background: var(--card); border-top: 1px solid var(--border);
+    display: flex; z-index: 200; padding-bottom: env(safe-area-inset-bottom);
+  }
+  .nav-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    padding: 10px 4px; cursor: pointer; border: none; background: none;
+    color: var(--text-ter); transition: color 0.15s; font-family: 'Noto Sans KR', sans-serif;
+    gap: 3px;
+  }
+  .nav-item.active { color: var(--green); }
+  .nav-icon { font-size: 20px; }
+  .nav-label { font-size: 10px; font-weight: 400; }
+  .nav-item.active .nav-label { font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div class="top-bar-inner">
+    <div class="app-name">Switch<span>ON</span></div>
+    <div class="today-badge" id="today-badge"></div>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <button class="tab-btn active" onclick="showTab('home',this)">홈</button>
+  <button class="tab-btn" onclick="showTab('guide',this)">가이드</button>
+  <button class="tab-btn" onclick="showTab('record',this)">기록</button>
+</div>
+
+<!-- 홈 탭 -->
+<div class="section active" id="tab-home">
+  <div class="home-date" id="home-date-label"></div>
+
+  <div class="cal-header">
+    <button class="cal-nav" onclick="shiftWeek(-1)">◀</button>
+    <span class="cal-week-label" id="cal-week-label"></span>
+    <button class="cal-nav" onclick="shiftWeek(1)">▶</button>
+  </div>
+  <div class="day-grid" id="day-grid"></div>
+
+  <div class="check-card" id="check-card" onclick="toggleDay()">
+    <div class="check-inner">
+      <div class="big-circle">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+          <polyline points="6,13 11,18 20,8" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="check-texts">
+        <div class="main" id="check-main">오늘 하루 지켰어요!</div>
+        <div class="sub" id="check-sub">탭해서 달성 체크</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">연속 달성</div>
+      <div class="stat-val" id="streak-val">0</div>
+      <div class="stat-unit">일째 🔥</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">총 달성일</div>
+      <div class="stat-val" id="total-val">0</div>
+      <div class="stat-unit">일</div>
+    </div>
+  </div>
+
+  <div class="progress-card">
+    <div class="progress-top">
+      <span class="progress-label">이번주 달성률</span>
+      <span class="progress-pct" id="week-pct">0%</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+</div>
+
+<!-- 가이드 탭 -->
+<div class="section" id="tab-guide">
+  <div class="guide-week-nav">
+    <button class="guide-nav-btn" id="guide-prev" onclick="shiftGuide(-1)">◀ 이전</button>
+    <span class="guide-week-label" id="guide-week-title"></span>
+    <button class="guide-nav-btn" id="guide-next" onclick="shiftGuide(1)">다음 ▶</button>
+  </div>
+  <div class="guide-week-dots" id="guide-dots"></div>
+  <div id="guide-content"></div>
+</div>
+
+<!-- 기록 탭 -->
+<div class="section" id="tab-record">
+  <div style="margin-bottom:16px;">
+    <div class="cal-header" style="margin-bottom:12px;">
+      <button class="cal-nav" onclick="shiftRecordMonth(-1)">◀</button>
+      <span class="cal-week-label" id="record-month-label"></span>
+      <button class="cal-nav" onclick="shiftRecordMonth(1)">▶</button>
+    </div>
+    <div id="record-month-grid" style="background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:16px;"></div>
+  </div>
+  <div id="record-list"></div>
+</div>
+
+<div class="bottom-nav">
+  <button class="nav-item active" onclick="showTab('home',null,'home-nav')" id="home-nav">
+    <span class="nav-icon">🏠</span><span class="nav-label">홈</span>
+  </button>
+  <button class="nav-item" onclick="showTab('guide',null,'guide-nav')" id="guide-nav">
+    <span class="nav-icon">📋</span><span class="nav-label">가이드</span>
+  </button>
+  <button class="nav-item" onclick="showTab('record',null,'record-nav')" id="record-nav">
+    <span class="nav-icon">📅</span><span class="nav-label">기록</span>
+  </button>
+</div>
+
+<script>
+const DAYS = ['일','월','화','수','목','금','토'];
+const START = new Date(2025,0,1); START.setHours(0,0,0,0);
+
+const WEEKS = [
+  {
+    num:'1주차', title:'장 환경 개선 & 지방 대사 켜기',
+    desc:'첫 1~3일은 쉐이크로만, 4~7일부터 점심 한 끼 식사를 추가해요.',
+    groups:[
+      {icon:'🥤', label:'1~3일차 식사', red:false, items:[
+        '단백질 쉐이크 하루 4끼 (물 or 무가당 두유로)',
+        '허용 간식: 플레인 무가당 요거트, 두부/연두부',
+        '허용 채소: 녹황색 채소, 오이',
+        '허용 오일: 코코넛오일, 올리브오일',
+        '음료: 물 하루 8컵 이상, 녹차·허브티만 허용',
+      ]},
+      {icon:'🍱', label:'4~7일차 식사', red:false, items:[
+        '아침: 단백질 쉐이크',
+        '점심: 현미잡곡밥 1/2공기 + 채소·해조류·버섯 + 단백질 (달걀·생선·살코기)',
+        '오후 간식: 단백질 쉐이크',
+        '저녁: 단백질 쉐이크',
+      ]},
+      {icon:'⛔', label:'금지 식품 (전 주차 공통)', red:true, items:[
+        '설탕·액상과당 (청량음료, 커피믹스, 과자, 사탕, 아이스크림, 주스)',
+        '밀가루 음식 (빵, 케이크, 파스타, 라면, 우동 등)',
+        '술 — 종류 무관 한 모금도 절대 금지',
+        '당분 첨가 우유·두유',
+        '커피 — 1~3일차 전면 금지',
+      ]},
+      {icon:'🏃', label:'운동 & 생활', red:false, items:[
+        '주 4회 이상 고강도 운동 30분 (1~3일차는 저강도 권장)',
+        '30분마다 자리에서 일어나기',
+        '저녁식사 취침 4시간 전 완료',
+        '12~14시간 공복 유지',
+        '수면 최소 6시간 (자정~오전 4시 필수 포함)',
+        '아침·저녁 프로바이오틱스 1포',
+      ]},
+    ]
+  },
+  {
+    num:'2주차', title:'인슐린 저항성 개선',
+    desc:'저녁은 밥 없이, 주 1회 24시간 단식을 시작해요.',
+    groups:[
+      {icon:'🍱', label:'식사', red:false, items:[
+        '아침: 단백질 쉐이크',
+        '점심: 현미잡곡밥 1/2공기 + 채소·해조류·버섯 + 단백질 양껏',
+        '오후 간식: 단백질 쉐이크',
+        '저녁: 밥 없이 채소·해조류·버섯 + 단백질 양껏',
+        '추가 허용: 콩류, 견과류, 블랙커피 오전 1잔, 우유, 치즈',
+      ]},
+      {icon:'⚡', label:'단식', red:false, items:[
+        '주 1회 24시간 단식 (이틀 연속 금지)',
+        '단식 후 고단백 식사로 근손실 예방',
+        '12~14시간 공복 매일 유지',
+      ]},
+      {icon:'🏃', label:'운동 & 생활', red:false, items:[
+        '주 4회 이상 고강도 운동 30분',
+        '30분마다 자리에서 일어나기',
+        '저녁식사 취침 4시간 전 완료',
+        '수면 최소 6시간 (자정~오전 4시 필수)',
+        '아침·저녁 프로바이오틱스 1포',
+      ]},
+    ]
+  },
+  {
+    num:'3주차', title:'본격 체지방 감량',
+    desc:'주 2회 단식으로 늘리고, 3주차 후 근육량 회복 여부를 체크해요.',
+    groups:[
+      {icon:'🍱', label:'식사', red:false, items:[
+        '아침: 단백질 쉐이크',
+        '점심: 현미잡곡밥 1/2공기 + 채소·해조류·버섯 + 단백질',
+        '오후 간식: 단백질 쉐이크 + 견과류 1줌 (건과일 혼합 제품 제외)',
+        '저녁: 밥 없이 채소·해조류·버섯 + 단백질 양껏',
+        '추가 허용: 단호박, 토마토, 밤, 바나나, 베리류 (양 조절 필수)',
+      ]},
+      {icon:'⚡', label:'단식', red:false, items:[
+        '주 2회 24시간 단식 (이틀 연속 금지)',
+        '단식 후 고단백 식사 필수',
+      ]},
+      {icon:'📊', label:'3주차 체크포인트', red:false, items:[
+        '3주차 종료 후 근육량이 시작일만큼 회복됐는지 확인',
+        '회복 완료 → 4주차 진행',
+        '미회복 → 3주차 다시 반복',
+      ]},
+      {icon:'🏃', label:'운동 & 생활', red:false, items:[
+        '주 4회 이상 고강도 운동 30분',
+        '30분마다 자리에서 일어나기',
+        '수면 최소 6시간',
+      ]},
+    ]
+  },
+  {
+    num:'4주차', title:'체질 전환 & 유지 전환',
+    desc:'단식을 유지하면서 근육과 체지방 변화를 보고 다음 단계를 결정해요.',
+    groups:[
+      {icon:'🍱', label:'식사', red:false, items:[
+        '아침: 단백질 쉐이크',
+        '점심: 저탄수화물 식단',
+        '저녁: 무탄수화물 식단',
+        '추가 허용: 과일 하루 1개',
+      ]},
+      {icon:'⚡', label:'단식', red:false, items:[
+        '주 2회 24시간 단식 유지 (이틀 연속 금지)',
+      ]},
+      {icon:'📊', label:'4주차 이후 판단', red:false, items:[
+        '근육↑ + 체지방↓ → 3·4주차 미션 계속',
+        '근육량 감소 → 주 1~2회 단식으로 줄이기',
+        '체중·체지방 변화 없음 → 유지기 전환 후 재시작',
+      ]},
+      {icon:'🏃', label:'운동 & 생활', red:false, items:[
+        '주 4회 이상 고강도 운동 30분',
+        '30분마다 자리에서 일어나기',
+        '수면 최소 6시간',
+      ]},
+    ]
+  },
+  {
+    num:'매일 공통', title:'반드시 지켜야 할 것들',
+    desc:'주차에 관계없이 매일 지켜야 하는 기본 규칙이에요.',
+    groups:[
+      {icon:'💧', label:'수분', red:false, items:[
+        '물 하루 8컵(2L) 이상 마시기',
+        '허브티·녹차 허용 (무가당)',
+      ]},
+      {icon:'😴', label:'수면', red:false, items:[
+        '수면 최소 6시간 이상',
+        '자정~오전 4시 수면 시간대 반드시 포함',
+      ]},
+      {icon:'🕐', label:'공복', red:false, items:[
+        '저녁식사 취침 4시간 전 완료',
+        '12~14시간 공복 유지',
+      ]},
+      {icon:'💊', label:'영양제', red:false, items:[
+        '프로바이오틱스/신바이오틱스 아침 1포',
+        '프로바이오틱스/신바이오틱스 저녁 1포',
+      ]},
+      {icon:'⛔', label:'절대 금지', red:true, items:[
+        '술 — 종류 무관 한 모금도 금지',
+        '설탕·액상과당이 든 모든 음식·음료',
+        '밀가루 음식 (빵·면·과자류 전부)',
+      ]},
+    ]
+  },
+];
+
+let state = {};
+try { state = JSON.parse(localStorage.getItem('switchon_app') || '{}'); } catch(e){}
+const save = () => { try { localStorage.setItem('switchon_app', JSON.stringify(state)); } catch(e){} };
+
+const today = new Date(); today.setHours(0,0,0,0);
+let selDate = new Date(today);
+let weekOffset = 0;
+let guideWeek = 0;
+let recordMonthOffset = 0;
+let openCards = {};
+
+const toKey = d => d.toISOString().slice(0,10);
+const fmtDate = d => d.getFullYear()+'년 '+(d.getMonth()+1)+'월 '+d.getDate()+'일 ('+DAYS[d.getDay()]+')';
+
+function getWeekStart(offset) {
+  const d = new Date(today);
+  d.setDate(d.getDate() - d.getDay() + offset*7);
+  return d;
+}
+
+function showTab(name, btn, navId) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (navId) document.getElementById(navId).classList.add('active');
+  if (name === 'home') { document.querySelectorAll('.tab-btn')[0].classList.add('active'); document.getElementById('home-nav').classList.add('active'); }
+  if (name === 'guide') renderGuide();
+  if (name === 'record') renderRecord();
+}
+
+function toggleDay() {
+  const key = toKey(selDate);
+  state[key] = !state[key];
+  save(); renderHome();
+}
+
+function shiftWeek(dir) { weekOffset += dir; renderHome(); }
+
+function renderHome() {
+  document.getElementById('today-badge').textContent = fmtDate(today);
+  document.getElementById('home-date-label').textContent = fmtDate(selDate);
+
+  const ws = getWeekStart(weekOffset);
+  const we = new Date(ws); we.setDate(we.getDate()+6);
+  document.getElementById('cal-week-label').textContent =
+    (ws.getMonth()+1)+'/'+ws.getDate()+' – '+(we.getMonth()+1)+'/'+we.getDate();
+
+  const grid = document.getElementById('day-grid');
+  grid.innerHTML = '';
+  let weekDone = 0, weekTotal = 0;
+  for(let i=0;i<7;i++){
+    const d = new Date(ws); d.setDate(ws.getDate()+i);
+    const key = toKey(d);
+    const isSel = toKey(d)===toKey(selDate);
+    const isToday = toKey(d)===toKey(today);
+    const done = !!state[key];
+    if(d <= today) weekTotal++;
+    if(done && d <= today) weekDone++;
+    const cell = document.createElement('div');
+    cell.className = 'day-cell'+(isSel?' selected':'')+(isToday?' today':'');
+    cell.innerHTML = `<span class="d-label">${DAYS[d.getDay()]}</span><span class="d-num">${d.getDate()}</span><div class="d-dot${done?'':' empty'}"></div>`;
+    cell.onclick = () => { selDate = new Date(d); renderHome(); };
+    grid.appendChild(cell);
+  }
+
+  const key = toKey(selDate);
+  const done = !!state[key];
+  const card = document.getElementById('check-card');
+  card.className = 'check-card' + (done?' done':'');
+  document.getElementById('check-main').textContent = done ? '완료! 오늘도 잘 했어요 💪' : '아직 체크 전이에요';
+  document.getElementById('check-sub').textContent = done ? '탭해서 취소' : '탭해서 오늘 달성 체크';
+
+  const keys = Object.keys(state).filter(k=>state[k]).sort();
+  document.getElementById('total-val').textContent = keys.length;
+  let streak = 0;
+  const dd = new Date(today);
+  while(state[toKey(dd)]){ streak++; dd.setDate(dd.getDate()-1); }
+  document.getElementById('streak-val').textContent = streak;
+
+  const pct = weekTotal ? Math.round(weekDone/weekTotal*100) : 0;
+  document.getElementById('week-pct').textContent = pct+'%';
+  document.getElementById('progress-fill').style.width = pct+'%';
+}
+
+// 가이드 탭
+function shiftGuide(dir) {
+  guideWeek = Math.max(0, Math.min(WEEKS.length-1, guideWeek+dir));
+  renderGuide();
+}
+
+function toggleCard(idx) {
+  openCards[guideWeek+'-'+idx] = !openCards[guideWeek+'-'+idx];
+  renderGuide();
+}
+
+function renderGuide() {
+  const w = WEEKS[guideWeek];
+  document.getElementById('guide-week-title').textContent = w.num;
+  document.getElementById('guide-prev').disabled = guideWeek === 0;
+  document.getElementById('guide-next').disabled = guideWeek === WEEKS.length-1;
+
+  let dots = '';
+  WEEKS.forEach((_,i) => { dots += `<div class="guide-dot${i===guideWeek?' active':''}"></div>`; });
+  document.getElementById('guide-dots').innerHTML = dots;
+
+  let html = `<div class="week-banner">
+    <div class="week-banner-num">${w.num}</div>
+    <div class="week-banner-title">${w.title}</div>
+    <div class="week-banner-desc">${w.desc}</div>
+  </div>`;
+
+  w.groups.forEach((g,gi) => {
+    const isOpen = !!openCards[guideWeek+'-'+gi];
+    html += `<div class="guide-card${isOpen?' open':''}">
+      <div class="guide-card-header" onclick="toggleCard(${gi})">
+        <div class="guide-card-title"><span class="guide-icon">${g.icon}</span>${g.label}</div>
+        <span class="guide-arrow">▼</span>
+      </div>
+      <div class="guide-card-body">`;
+    g.items.forEach(it => {
+      html += `<div class="guide-item${g.red?' red-item':''}">${it}</div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  document.getElementById('guide-content').innerHTML = html;
+}
+
+// 기록 탭
+function shiftRecordMonth(dir) { recordMonthOffset += dir; renderRecord(); }
+
+function renderRecord() {
+  const base = new Date(today.getFullYear(), today.getMonth() + recordMonthOffset, 1);
+  const yr = base.getFullYear(), mo = base.getMonth();
+  document.getElementById('record-month-label').textContent = yr+'년 '+(mo+1)+'월';
+
+  const firstDay = new Date(yr,mo,1).getDay();
+  const daysInMonth = new Date(yr,mo+1,0).getDate();
+
+  let html = `<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:8px;">`;
+  DAYS.forEach(d => { html += `<div style="text-align:center;font-size:11px;color:var(--text-ter);padding:4px 0;">${d}</div>`; });
+  html += '</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">';
+  for(let i=0;i<firstDay;i++) html += '<div></div>';
+  for(let d=1;d<=daysInMonth;d++){
+    const dd = new Date(yr,mo,d);
+    const key = toKey(dd);
+    const done = !!state[key];
+    const isT = toKey(dd)===toKey(today);
+    html += `<div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:50%;
+      background:${done?'var(--green)':isT?'var(--bg)':'transparent'};
+      border:${isT?'1.5px solid var(--green)':'1.5px solid transparent'};
+      font-size:12px;color:${done?'white':isT?'var(--green)':'var(--text-sec)'};font-weight:${done||isT?'700':'400'};">${d}</div>`;
+  }
+  html += '</div>';
+  document.getElementById('record-month-grid').innerHTML = html;
+
+  const doneKeys = Object.keys(state).filter(k=>state[k]).sort().reverse().slice(0,20);
+  let listHtml = `<div style="font-size:13px;font-weight:700;color:var(--text-sec);margin-bottom:10px;">최근 달성 기록</div>`;
+  if(doneKeys.length===0){
+    listHtml += `<div style="text-align:center;padding:30px;color:var(--text-ter);font-size:14px;">아직 달성 기록이 없어요</div>`;
+  } else {
+    doneKeys.forEach(k => {
+      const d = new Date(k);
+      listHtml += `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);
+        padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:14px;color:var(--text);">${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${DAYS[d.getDay()]})</span>
+        <span style="font-size:18px;">✅</span>
+      </div>`;
+    });
+  }
+  document.getElementById('record-list').innerHTML = listHtml;
+}
+
+renderHome();
+renderGuide();
+</script>
+</body>
+</html>
